@@ -1,0 +1,21 @@
+HW_SWAP_TOTAL=0
+HW_SWAP_FREE=0
+##########################################################################3
+## Check amount of free swap against minimum ($1) + oom.
+function check_oom() {
+	local SWAP_MINFREE=$1
+
+        if [[ $HW_RAM_TOTAL -eq 0 ]]; then
+		nhc_hw_gather_data
+	fi
+
+	nhc_common_parse_size "$SWAP_MINFREE" SWAP_MINFREE
+	local AUX=$(dmesg | grep -m 1 'Out of memory' | cut -d ' ' -f 7 | sed 's/(/ / ; s/)/ /')
+
+	if [[ $HW_SWAP_FREE -lt $SWAP_MINFREE && ! -z $AUX ]]; then
+		die 1 "$FUNCNAME: $AUX" #"$FUNCNAME: OOM."
+		return 1
+	fi
+	return 0
+}
+#########################################################
