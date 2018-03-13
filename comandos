@@ -1,0 +1,63 @@
+#! /LUSTRE/home/uam/izt/pdcs/alumnos/a.iocr/miniconda2/bin/python
+import sys
+import time
+import threading
+import random
+import telepot
+from telepot.loop import MessageLoop
+from telepot.namedtuple import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, ForceReply
+from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
+from telepot.namedtuple import InlineQueryResultArticle, InlineQueryResultPhoto, InputTextMessageContent
+import commands
+def teclado(swap,oom,chat_id):
+	aux=swap+oom
+	keyboard=[]
+	contador = 0
+	for a in aux : 
+		keyboard=[['1','2'],['3','4']]
+		contador+=1
+	markup = ReplyKeyboardMarkup(keyboard)#=[
+		#[KeyboardButton(text='Text only'), KeyboardButton(text='Text only'), KeyboardButton(text='Salir')],
+#		#[dict(text='Phone', request_contact=True), KeyboardButton(text='Location', request_location=True)],
+		#])
+	bot.sendMessage(chat_id, 'Elija Nodo', reply_markup=markup)
+
+def mensaje(oom,swap):
+	mensaje=''
+	if swap != '' :
+		mensaje=mensaje + "\nswap:\n" + swap
+	if oom != '' :
+		mensaje=mensaje + "\noom:\n" + oom
+	return mensaje
+def handle(msg):
+	content_type, chat_type, chat_id = telepot.glance(msg)
+	print(content_type, chat_type, chat_id)
+	if content_type == 'text':
+		if msg['text'] == '/sinfo' or msg['text'] == '/sinfo@LSVPbot' :
+                        oom=commands.getoutput("sinfo -o '%n %H %E' -t DRAINING | grep -e 'check_oom:' | cut -d ' ' -f 1,6 | column -t ")
+                        swap=commands.getoutput("sinfo -o '%n %H %E' -t DRAINING | grep -e 'swap' | cut -d ' ' -f 1,5 | column -t")
+                        if oom != "" or swap != "" :
+                                bot.sendMessage(chat_id,"Draining:" + mensaje(oom,swap))
+                        oom=commands.getoutput("sinfo -o '%n %H %E' -t DRAINED | grep -e 'check_oom:' | cut -d ' ' -f 1,6 | column -t")
+                        swap=commands.getoutput("sinfo -o '%n %H %E' -t DRAINED | grep -e 'swap' | cut -d ' ' -f 1,5 | column -t")
+
+			if oom != "" or swap != "" :
+				bot.sendMessage(chat_id,"Drained:" + mensaje(oom,swap) )
+				swap=commands.getoutput("sinfo -o '%n %H %E' -t DRAINED | grep -e 'swap' | cut -d ' ' -f 1 ").splitlines()
+				oom=commands.getoutput("sinfo -o '%n %H %E' -t DRAINING | grep -e 'check_oom:' | cut -d ' ' -f 1 ").splitlines()
+				#teclado(swap,oom,chat_id)
+			else :
+				bot.sendMessage(chat_id,'Todo en orden')
+		elif msg['text'] == '/status' or msg['text'] == '/status@LSVPbot' :
+			bot.sendMessage(chat_id,commands.getoutput("echo \"Running : $(squeue -t R -h | wc -l)\" ; echo \"Pending : $(squeue -t pd -h | wc -l)\" ; echo \"idle : $(sinfo -Nti | cut -d ' ' -f 1 | uniq | wc -l)\""))
+		elif msg['text'] == 'Salir' :
+			bot.sendMessage(chat_id, 'Terminado', reply_markup= ReplyKeyboardRemove())
+		else : 
+			bot.sendMessage(chat_id,"No se encontro el comando")
+TOKEN = '405476910:AAEc9Ix260UGuhy5eRT4uOEJfHE5WNLldlQ' #sys.argv[1]   get token from command-line
+bot = telepot.Bot(TOKEN)
+MessageLoop(bot, handle).run_as_thread()
+print ('Listening ...')
+# Keep the program running.
+while 1:
+    time.sleep(10)

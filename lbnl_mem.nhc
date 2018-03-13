@@ -19,3 +19,21 @@ function check_oom() {
 	return 0
 }
 #########################################################
+# Check amount of free swap against minimum ($1).
+function check_swap() {
+        local SWAP_MINFREE=$1
+
+        if [[ $HW_RAM_TOTAL -eq 0 ]]; then
+                nhc_hw_gather_data
+        fi
+
+        nhc_common_parse_size "$SWAP_MINFREE" SWAP_MINFREE
+        local AUX=$((for file in /proc/*/status ; do awk '/^Pid|VmSwap|Name/{printf $2 " " $3}END{ print ""}' $file; done | grep kB | grep -wv "0 kB" | sort -k 3 -n -r) | column -t | cut -d ' ' -f 1 | head -n 1)
+
+        if [[ $HW_SWAP_FREE -lt $SWAP_MINFREE && ! -z $AUX ]]; then
+                die 1 "$FUNCNAME: $AUX"
+                return 1
+        fi
+        return 0
+}
+
