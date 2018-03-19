@@ -28,7 +28,8 @@ function check_swap() {
         fi
 
         nhc_common_parse_size "$SWAP_MINFREE" SWAP_MINFREE
-        local AUX=$((for file in /proc/*/status ; do awk '/^Pid|VmSwap|Name/{printf $2 " " $3}END{ print ""}' $file; done | grep kB | grep -wv "0 kB" | sort -k 3 -n -r) | column -t | cut -d ' ' -f 1 | head -n 1)
+        #local AUX=$((for file in /proc/*/status ; do awk '/^Pid|VmSwap|Name/{printf $2 " " $3}END{ print ""}' $file; done | grep kB | grep -wv "0 kB" | sort -k 3 -n -r) | column -t | cut -d ' ' -f 1 | head -n 1)
+	local AUX=$(smemstat -g -c | awk '{print $7}' | sed '1d'| head -n 1)
 
         if [[ $HW_SWAP_FREE -lt $SWAP_MINFREE && ! -z $AUX ]]; then
                 die 1 "$FUNCNAME: $AUX"

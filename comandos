@@ -36,17 +36,23 @@ def handle(msg):
 		if msg['text'] == '/sinfo' or msg['text'] == '/sinfo@LSVPbot' :
                         oom=commands.getoutput("sinfo -o '%n %H %E' -t DRAINING | grep -e 'check_oom:' | cut -d ' ' -f 1,6 | column -t ")
                         swap=commands.getoutput("sinfo -o '%n %H %E' -t DRAINING | grep -e 'swap' | cut -d ' ' -f 1,5 | column -t")
+			draining=0
                         if oom != "" or swap != "" :
                                 bot.sendMessage(chat_id,"Draining:" + mensaje(oom,swap))
+				draining=1
                         oom=commands.getoutput("sinfo -o '%n %H %E' -t DRAINED | grep -e 'check_oom:' | cut -d ' ' -f 1,6 | column -t")
                         swap=commands.getoutput("sinfo -o '%n %H %E' -t DRAINED | grep -e 'swap' | cut -d ' ' -f 1,5 | column -t")
+			
 
 			if oom != "" or swap != "" :
 				bot.sendMessage(chat_id,"Drained:" + mensaje(oom,swap) )
 				swap=commands.getoutput("sinfo -o '%n %H %E' -t DRAINED | grep -e 'swap' | cut -d ' ' -f 1 ").splitlines()
 				oom=commands.getoutput("sinfo -o '%n %H %E' -t DRAINING | grep -e 'check_oom:' | cut -d ' ' -f 1 ").splitlines()
 				#teclado(swap,oom,chat_id)
-			else :
+			gpu=commands.getoutput("sinfo -R -o \"%n %35E\" | grep -e \"gres/gpu\" | cut -d ' ' -f 1")
+			if gpu != "" :
+				bot.sendMessage(chat_id,"GPU:\n" + gpu)
+			if oom == "" and swap == "" and gpu == "" and draining == 0 :
 				bot.sendMessage(chat_id,'Todo en orden')
 		elif msg['text'] == '/status' or msg['text'] == '/status@LSVPbot' :
 			bot.sendMessage(chat_id,commands.getoutput("echo \"Running : $(squeue -t R -h | wc -l)\" ; echo \"Pending : $(squeue -t pd -h | wc -l)\" ; echo \"idle : $(sinfo -Nti | cut -d ' ' -f 1 | uniq | wc -l)\""))
